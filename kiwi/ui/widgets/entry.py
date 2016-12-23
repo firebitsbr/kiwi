@@ -26,8 +26,8 @@
 
 import datetime
 import gettext
-import gobject
-import pango
+from gi.repository import GObject
+from gi.repository import Pango
 
 from kiwi.currency import currency
 from kiwi.datatypes import converter, number, ValueUnset, ValidationError
@@ -41,13 +41,6 @@ from kiwi.ui.proxywidget import ValidatableProxyWidgetMixin, \
 from kiwi.utils import gsignal, type_register
 
 _ = lambda msg: gettext.dgettext('kiwi', msg)
-
-
-class ProxyEntryMeta(gobject.GObjectMeta):
-    def __call__(self, *args, **kwargs):
-        rv = super(ProxyEntryMeta, self).__call__(*args, **kwargs)
-        rv.__post_init__()
-        return rv
 
 
 class ProxyEntry(KiwiEntry, ValidatableProxyWidgetMixin):
@@ -66,15 +59,14 @@ class ProxyEntry(KiwiEntry, ValidatableProxyWidgetMixin):
     how to fill these entries is displayed according to the current locale.
     """
 
-    __class__ = ProxyEntryMeta
-
     allowed_data_types = (basestring, datetime.date, datetime.time,
                           datetime.datetime, object) + number
 
     __gtype_name__ = 'ProxyEntry'
-    mandatory = gobject.property(type=bool, default=False)
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
-    gsignal('content-changed')
+    mandatory = GObject.property(type=bool, default=False)
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
+    # FIXME gtk3 discover why we had to set this on KiwiEntry
+    # gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
 
@@ -83,22 +75,17 @@ class ProxyEntry(KiwiEntry, ValidatableProxyWidgetMixin):
         self._has_been_updated = False
         KiwiEntry.__init__(self)
         ValidatableProxyWidgetMixin.__init__(self)
-        self._entry_data_type = data_type
-        # XXX: Sales -> New Loan Item requires this, figure out why
-        try:
-            self.props.data_type = data_type
-        except (AttributeError, TypeError):
-            pass
+        self.props.data_type = data_type
         # Hide currency symbol from the entry.
         self.set_options_for_datatype(currency, symbol=False)
 
-    def __post_init__(self):
-        self.props.data_type = self._entry_data_type
+        self.connect_after('changed', self._on_changed)
 
     # Virtual methods
-    gsignal('changed', 'override')
+    # FIXME gtk3
+    #gsignal('changed', 'override')
 
-    def do_changed(self):
+    def _on_changed(self, widget):
         if self._block_changed:
             self.emit_stop_by_name('changed')
             return
@@ -122,7 +109,7 @@ class ProxyEntry(KiwiEntry, ValidatableProxyWidgetMixin):
         except MaskError:
             pass
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=_set_data_type,
         type=str, blurb='Data Type')
@@ -213,11 +200,11 @@ class ProxyDateEntry(DateEntry, ValidatableProxyWidgetMixin):
     # accept bool values
     allowed_data_types = datetime.date,
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
@@ -237,7 +224,7 @@ class ProxyDateEntry(DateEntry, ValidatableProxyWidgetMixin):
         layout = self.entry.get_layout()
         context = layout.get_context()
         metrics = context.get_metrics(context.get_font_description())
-        char_width = metrics.get_approximate_char_width() / pango.SCALE
+        char_width = metrics.get_approximate_char_width() / Pango.SCALE
         current_width = self.entry.get_width_chars()
 
         # We add 4 pixels to the width, because of the icon borders
@@ -279,7 +266,7 @@ class ProxyDateEntry(DateEntry, ValidatableProxyWidgetMixin):
 
     def _set_mandatory(self, value):
         self.entry.props.mandatory = value
-    mandatory = gobject.property(getter=_get_mandatory,
+    mandatory = GObject.property(getter=_get_mandatory,
                                  setter=_set_mandatory,
                                  type=bool, default=False)
 

@@ -1,7 +1,7 @@
 import os
 import glob
 
-import gtk
+from gi.repository import Gtk, GdkPixbuf
 
 from kiwi.ui.hyperlink import HyperLink
 from kiwi.ui.objectlist import ObjectList, ObjectTree
@@ -46,10 +46,10 @@ def _register_icons():
     for filename in glob.glob(os.path.join(icondir, '*.png')):
         basename = os.path.basename(filename)
         name = basename[:-4]
-        gtk.icon_theme_add_builtin_icon(
+        Gtk.icon_theme_add_builtin_icon(
             'widget-kiwi-%s' % (name,),
             22,
-            gtk.gdk.pixbuf_new_from_file(filename))
+            GdkPixbuf.Pixbuf.new_from_file(filename))
 
 
 _register_icons()

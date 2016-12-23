@@ -30,8 +30,7 @@ to keep the state of a model object synchronized with a View.
 
 import logging
 
-import gobject
-import gtk
+from gi.repository import Gtk
 
 from kiwi import ValueUnset
 from kiwi.accessor import kgetattr, ksetattr, clear_attr_cache
@@ -47,14 +46,14 @@ class ProxyError(Exception):
 
 def block_widget(widget):
     """Blocks the signal handler of the 'content-changed' signal on widget"""
-    connection_id = widget.get_data('content-changed-id')
+    connection_id = widget._content_changed_id
     if connection_id:
         widget.handler_block(connection_id)
 
 
 def unblock_widget(widget):
     """Unblocks the signal handler of the 'content-changed' signal on widget"""
-    connection_id = widget.get_data('content-changed-id')
+    connection_id = widget._content_changed_id
     if connection_id:
         widget.handler_unblock(connection_id)
 
@@ -111,7 +110,7 @@ class Proxy:
         # editable.
         if not widget.is_sensitive():
             return
-        if isinstance(widget, gtk.Editable) and not widget.get_editable():
+        if isinstance(widget, Gtk.Editable) and not widget.get_editable():
             return
 
         model = self.model
@@ -180,30 +179,30 @@ class Proxy:
             self._on_widget__content_changed,
             attribute,
             IValidatableProxyWidget.providedBy(widget))
-        widget.set_data('content-changed-id', connection_id)
+        widget._content_changed_id = connection_id
 
         if IValidatableProxyWidget.providedBy(widget):
             connection_id = widget.connect(
                 'notify::visible',
                 self._on_widget__notify)
-            widget.set_data('notify-visible-id', connection_id)
+            widget._notify_visible_id = connection_id
 
             connection_id = widget.connect(
                 'notify::sensitive',
                 self._on_widget__notify)
-            widget.set_data('notify-sensitive-id', connection_id)
+            widget._notify_sensitive_id = connection_id
 
             connection_id = widget.connect(
                 'validation-changed',
                 self._on_widget__validation_changed,
                 attribute)
-            widget.set_data('validation-changed-id', connection_id)
+            widget._validation_changed_id = connection_id
 
         model_attributes = self._model_attributes
         # save this widget in our map
         if (attribute in model_attributes and
             # RadioButtons are allowed several times
-            not gobject.type_is_a(widget, 'GtkRadioButton')):
+            not isinstance(widget, Gtk.RadioButton)):
             old_widget = model_attributes[attribute]
             raise KeyError("The widget %s (%r) in view %s is already in "
                            "the proxy, defined by widget %s (%r)" % (
@@ -407,13 +406,13 @@ class Proxy:
         Adds a new widget to the proxy
 
         :param name: name of the widget
-        :param widget: widget, must be a gtk.Widget subclass
+        :param widget: widget, must be a Gtk.Widget subclass
         """
         if name in self._model_attributes:
             raise TypeError("there is already a widget called %s" % name)
 
-        if not isinstance(widget, gtk.Widget):
-            raise TypeError("%r must be a gtk.Widget subclass" % widget)
+        if not isinstance(widget, Gtk.Widget):
+            raise TypeError("%r must be a Gtk.Widget subclass" % widget)
 
         self._setup_widget(name, widget)
 
@@ -427,9 +426,9 @@ class Proxy:
             raise TypeError("there is no widget called %s" % name)
 
         widget = self._model_attributes.pop(name)
-        widget.disconnect(widget.get_data('content-changed-id'))
+        widget.disconnect(widget._content_changed_id)
 
         if IValidatableProxyWidget.providedBy(widget):
-            for data_name in ('notify-visible-id',
-                              'notify-sensitive-id'):
-                widget.disconnect(widget.get_data(data_name))
+            for data_name in ['_notify_visible_id',
+                              '_notify_sensitive_id']:
+                widget.disconnect(getattr(widget, data_name))

@@ -25,9 +25,7 @@
 
 import datetime
 
-import gobject
-import gtk
-from gtk import gdk
+from gi.repository import GObject, Gtk, GdkPixbuf
 
 from kiwi import ValueUnset
 from kiwi.datatypes import number
@@ -35,31 +33,31 @@ from kiwi.ui.proxywidget import ProxyWidgetMixin
 from kiwi.utils import gsignal
 
 
-class ProxyButton(gtk.Button, ProxyWidgetMixin):
+class ProxyButton(Gtk.Button, ProxyWidgetMixin):
     """
     A ProxyButton is a Button subclass which is implementing the features
     required to be used inside the kiwi framework.
 
     It has a specific feature not found in other implementations. If
-    the datatype is set to pixbuf a gtk.Image will be constructed from the
+    the datatype is set to pixbuf a Gtk.Image will be constructed from the
     pixbuf and be set as a child for the Button
     """
 
     allowed_data_types = (basestring, datetime.date, datetime.datetime,
-                          datetime.time, gdk.Pixbuf) + number
+                          datetime.time, GdkPixbuf.Pixbuf) + number
     __gtype_name__ = 'ProxyButton'
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
 
     def __init__(self):
-        gtk.Button.__init__(self)
+        GObject.GObject.__init__(self)
         ProxyWidgetMixin.__init__(self)
         self.props.data_type = str
 
@@ -70,7 +68,7 @@ class ProxyButton(gtk.Button, ProxyWidgetMixin):
                 return
 
             storage_type = image.get_storage_type()
-            if storage_type != gtk.IMAGE_PIXBUF:
+            if storage_type != Gtk.ImageType.PIXBUF:
                 raise ValueError(
                     "the image of a ProxyButton must be loaded "
                     "from a pixbuf, not %s" % storage_type)
@@ -86,7 +84,7 @@ class ProxyButton(gtk.Button, ProxyWidgetMixin):
             if not data:
                 image = None
             else:
-                image = gtk.Image()
+                image = Gtk.Image()
                 image.set_from_pixbuf(data)
                 image.show()
 
@@ -100,4 +98,4 @@ class ProxyButton(gtk.Button, ProxyWidgetMixin):
 
         self.emit('content-changed')
 
-gobject.type_register(ProxyButton)
+GObject.type_register(ProxyButton)

@@ -21,10 +21,9 @@
 # Author(s): Ronaldo Maia <romaia@async.com.br>
 #
 
-import gobject
-import gtk
-from gtk import gdk
-from gtk import keysyms
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Gdk
 
 from kiwi.python import strip_accents
 from kiwi.utils import gsignal, type_register
@@ -33,9 +32,9 @@ COMPLETION_TIMEOUT = 300
 PAGE_INCREMENT = 14
 
 
-class KiwiEntryCompletion(gtk.EntryCompletion):
+class KiwiEntryCompletion(Gtk.EntryCompletion):
     def __init__(self):
-        gtk.EntryCompletion.__init__(self)
+        GObject.GObject.__init__(self)
 
         self._inline_completion = False
         self._popup_completion = True
@@ -99,7 +98,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
 
         if (event.window != self._popup_window.get_window() or
             (tuple(self._popup_window.allocation.intersect(
-                   gdk.Rectangle(x=int(event.x), y=int(event.y),
+                   Gdk.Rectangle(x=int(event.x), y=int(event.y),
                                  width=1, height=1)))) == (0, 0, 0, 0)):
             self.popdown()
 
@@ -124,9 +123,9 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
         self._selected_index = -1
 
         if self._completion_timeout != -1:
-            gobject.source_remove(self._completion_timeout)
+            GObject.source_remove(self._completion_timeout)
 
-        timeout = gobject.timeout_add(COMPLETION_TIMEOUT,
+        timeout = GObject.timeout_add(COMPLETION_TIMEOUT,
                                       self._on_completion_timeout)
         self._completion_timeout = timeout
         return True
@@ -145,7 +144,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
 
     def _on_completion_key_press(self, entry, event):
         window = self._popup_window
-        if window and not window.flags() & gtk.VISIBLE:
+        if window and not window.flags() & Gtk.VISIBLE:
             return False
 
         if not self._treeview:
@@ -155,7 +154,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
         keyval = event.keyval
         index = self._selected_index
 
-        if keyval == keysyms.Up or keyval == keysyms.KP_Up:
+        if keyval == Gdk.KEY_Up or keyval == Gdk.KEY_KP_Up:
             index -= 1
             if index < -1:
                 index = matches - 1
@@ -163,7 +162,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
             self._select_item(index)
             return True
 
-        elif keyval == keysyms.Down or keyval == keysyms.KP_Down:
+        elif keyval == Gdk.KEY_Down or keyval == Gdk.KEY_KP_Down:
             index += 1
             if index > matches - 1:
                 index = -1
@@ -171,7 +170,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
             self._select_item(index)
             return True
 
-        elif keyval == keysyms.Page_Up:
+        elif keyval == Gdk.KEY_Page_Up:
             if index < 0:
                 index = matches - 1
             elif index > 0 and index - PAGE_INCREMENT < 0:
@@ -185,7 +184,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
             self._select_item(index)
             return True
 
-        elif keyval == keysyms.Page_Down:
+        elif keyval == Gdk.KEY_Page_Down:
             if index < 0:
                 index = 0
             elif index < matches - 1 and index + PAGE_INCREMENT > matches - 1:
@@ -199,12 +198,12 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
             self._select_item(index)
             return True
 
-        elif keyval == keysyms.Escape:
+        elif keyval == Gdk.KEY_Escape:
             self.popdown()
             return True
 
-        elif (keyval == keysyms.Return or
-              keyval == keysyms.KP_Enter):
+        elif (keyval == Gdk.KEY_Return or
+              keyval == Gdk.KEY_KP_Enter):
             self.popdown()
             selection = self._treeview.get_selection()
             model, titer = selection.get_selected()
@@ -222,12 +221,12 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
     def _popup_grab_window(self):
         activate_time = 0L
         window = self._entry.get_window()
-        if gdk.pointer_grab(window, True,
-                            (gdk.BUTTON_PRESS_MASK |
-                             gdk.BUTTON_RELEASE_MASK |
-                             gdk.POINTER_MOTION_MASK),
+        if Gdk.pointer_grab(window, True,
+                            (Gdk.EventMask.BUTTON_PRESS_MASK |
+                             Gdk.EventMask.BUTTON_RELEASE_MASK |
+                             Gdk.EventMask.POINTER_MOTION_MASK),
                             None, None, activate_time) == 0:
-            if gdk.keyboard_grab(window, True, activate_time) == 0:
+            if Gdk.keyboard_grab(window, True, activate_time) == 0:
                 return True
             else:
                 window.get_display().pointer_ungrab(activate_time)
@@ -248,7 +247,7 @@ class KiwiEntryCompletion(gtk.EntryCompletion):
         self._key = self._entry.get_text()
         self._filter_model.refilter()
         self._treeview.set_model(self._filter_model)
-        if self._treeview.flags() & gtk.REALIZED:
+        if self._treeview.get_realized():
             self._treeview.scroll_to_point(0, 0)
 
     def set_entry(self, entry):

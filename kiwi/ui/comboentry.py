@@ -25,8 +25,7 @@
 
 import logging
 
-import gtk
-from gtk import gdk, keysyms
+from gi.repository import Gtk, Gdk, GObject
 
 from kiwi.component import implements
 from kiwi.enums import ComboColumn, ComboMode
@@ -58,33 +57,33 @@ class _ComboEntryPopup(PopupWindow):
         self._filter_model = None
 
     def get_main_widget(self):
-        vbox = gtk.VBox()
+        vbox = Gtk.VBox()
         vbox.show()
 
-        self._sw = gtk.ScrolledWindow()
-        self._sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_NEVER)
-        vbox.pack_start(self._sw)
+        self._sw = Gtk.ScrolledWindow()
+        self._sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.NEVER)
+        vbox.pack_start(self._sw, True, True, 0)
         self._sw.show()
 
-        self._model = gtk.ListStore(str)
-        self._treeview = gtk.TreeView(self._model)
+        self._model = Gtk.ListStore(str)
+        self._treeview = Gtk.TreeView(self._model)
         self._treeview.set_enable_search(False)
         self._treeview.connect('motion-notify-event',
                                self._on_treeview__motion_notify_event)
         self._treeview.connect('button-release-event',
                                self._on_treeview__button_release_event)
-        self._treeview.add_events(gdk.BUTTON_PRESS_MASK)
+        self._treeview.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self._selection = self._treeview.get_selection()
-        self._selection.set_mode(gtk.SELECTION_BROWSE)
+        self._selection.set_mode(Gtk.SelectionMode.BROWSE)
         self._renderer = ComboDetailsCellRenderer()
         self._treeview.append_column(
-            gtk.TreeViewColumn('Foo', self._renderer,
+            Gtk.TreeViewColumn('Foo', self._renderer,
                                label=0, data=1))
         self._treeview.set_headers_visible(False)
         self._sw.add(self._treeview)
         self._treeview.show()
 
-        self._label = gtk.Label()
+        self._label = Gtk.Label()
 
         return vbox
 
@@ -145,7 +144,7 @@ class _ComboEntryPopup(PopupWindow):
         self._label.set_text(text)
 
     def set_model(self, model):
-        if isinstance(model, gtk.TreeModelFilter):
+        if isinstance(model, Gtk.TreeModelFilter):
             self._filter_model = model
             model = model.get_model()
 
@@ -158,7 +157,7 @@ class _ComboEntryPopup(PopupWindow):
             self.emit('text-selected', model[treeiter][0])
 
     def handle_key_press_event(self, event):
-        if event.keyval == keysyms.Tab:
+        if event.keyval == Gdk.KEY_Tab:
             self.popdown()
             # XXX: private member of comboentry
             self._comboentry._button.grab_focus()
@@ -193,9 +192,9 @@ class _ComboEntryPopup(PopupWindow):
         rows = len(self._treeview.get_model())
         if rows > self._visible_rows:
             rows = self._visible_rows
-            self._sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+            self._sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
         else:
-            self._sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER)
+            self._sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
 
         cell_height = treeview.get_cell_area(0, treeview.get_column(0)).height
         height = cell_height * rows
@@ -213,7 +212,7 @@ class _ComboEntryPopup(PopupWindow):
 
         # if the model currently being used is a TreeModelFilter, convert
         # the iter to be a TreeModel iter (witch is what the user expects)
-        if isinstance(model, gtk.TreeModelFilter) and treeiter:
+        if isinstance(model, Gtk.TreeModelFilter) and treeiter:
             treeiter = model.convert_iter_to_child_iter(treeiter)
         return treeiter
 
@@ -227,7 +226,7 @@ class _ComboEntryPopup(PopupWindow):
         # Since the user passed a TreeModel iter, if the model currently
         # being used is a TreeModelFilter, convert it to be a TreeModelFilter
         # iter
-        if isinstance(model, gtk.TreeModelFilter):
+        if isinstance(model, Gtk.TreeModelFilter):
             # See #3099 for an explanation why this is needed and a
             # testcase
             tmodel = model.get_model()
@@ -246,7 +245,7 @@ class _ComboEntryPopup(PopupWindow):
 type_register(_ComboEntryPopup)
 
 
-class ComboEntry(gtk.VBox):
+class ComboEntry(Gtk.VBox):
 
     implements(IEasyCombo)
 
@@ -256,9 +255,9 @@ class ComboEntry(gtk.VBox):
     def __init__(self, entry=None):
         """
         Create a new ComboEntry object.
-        :param entry: a gtk.Entry subclass to use
+        :param entry: a Gtk.Entry subclass to use
         """
-        gtk.VBox.__init__(self)
+        GObject.GObject.__init__(self)
         self._popping_down = False
 
         if not entry:
@@ -267,10 +266,10 @@ class ComboEntry(gtk.VBox):
         if isinstance(entry, KiwiEntry):
             entry.set_normal_completion()
 
-        self.hbox = gtk.HBox()
-        self.pack_start(gtk.EventBox())
-        self.pack_start(self.hbox, expand=False)
-        self.pack_start(gtk.EventBox())
+        self.hbox = Gtk.HBox()
+        self.pack_start(Gtk.EventBox(), True, True, 0)
+        self.pack_start(self.hbox, False, True, 0)
+        self.pack_start(Gtk.EventBox(), True, True, 0)
 
         self.mode = ComboMode.UNKNOWN
         self.entry = entry
@@ -285,17 +284,17 @@ class ComboEntry(gtk.VBox):
         self.entry.connect('focus-out-event',
                            self._on_entry__focus_out_event)
 
-        self.hbox.pack_start(self.entry, True, True)
+        self.hbox.pack_start(self.entry, True, True, 0)
         self.hbox.show_all()
 
-        self._button = gtk.ToggleButton()
+        self._button = Gtk.ToggleButton()
         self._button.connect('scroll-event', self._on_entry__scroll_event)
         self._button.connect('toggled', self._on_button__toggled)
         self._button.set_focus_on_click(False)
-        self.hbox.pack_end(self._button, False, False)
+        self.hbox.pack_end(self._button, False, False, 0)
         self._button.show()
 
-        arrow = gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_NONE)
+        arrow = Gtk.Arrow(Gtk.ArrowType.DOWN, Gtk.ShadowType.NONE)
         self._button.add(arrow)
         arrow.show()
 
@@ -326,7 +325,7 @@ class ComboEntry(gtk.VBox):
     def _on_entry_completion__match_selected(self, completion, model, iter):
         # the iter we receive is specific to the tree model filter used
         # In the entry completion, convert it to an iter in the real model
-        if isinstance(model, gtk.TreeModelFilter):
+        if isinstance(model, Gtk.TreeModelFilter):
             iter = model.convert_iter_to_child_iter(iter)
         self.set_active_iter(iter)
 
@@ -349,12 +348,12 @@ class ComboEntry(gtk.VBox):
 
         curr = model[treeiter].path[0]
         # Scroll up, select the previous item
-        if event.direction == gdk.SCROLL_UP:
+        if event.direction == Gdk.ScrollDirection.UP:
             curr -= 1
             if curr >= 0:
                 self.set_active_iter(model[curr].iter)
         # Scroll down, select the next item
-        elif event.direction == gdk.SCROLL_DOWN:
+        elif event.direction == Gdk.ScrollDirection.DOWN:
             curr += 1
             if curr < len(model):
                 self.set_active_iter(model[curr].iter)
@@ -365,10 +364,10 @@ class ComboEntry(gtk.VBox):
 
         Alt+Down: Open popup
         """
-        keyval, state = event.keyval, event.state
-        state &= gtk.accelerator_get_default_mod_mask()
-        if ((keyval == keysyms.Down or keyval == keysyms.KP_Down) and
-            state == gdk.MOD1_MASK):
+        keyval, state = event.keyval, event.get_state()
+        state &= Gtk.accelerator_get_default_mod_mask()
+        if ((keyval == Gdk.KEY_Down or keyval == Gdk.KEY_KP_Down) and
+            state == Gdk.ModifierType.MOD1_MASK):
             self.popup()
             return True
 
@@ -406,7 +405,7 @@ class ComboEntry(gtk.VBox):
 
         model = treeview.get_model()
         treeiter = self.entry.get_iter_by_data(current_object)
-        if treeiter and isinstance(model, gtk.TreeModelFilter):
+        if treeiter and isinstance(model, Gtk.TreeModelFilter):
             # Just like we do in comboentry.py, convert iter between
             # models. See #3099 for more information
             tmodel = model.get_model()
@@ -472,7 +471,7 @@ class ComboEntry(gtk.VBox):
         """
         Set the tree model to model
         :param model: new model
-        :type model: gtk.TreeModel
+        :type model: Gtk.TreeModel
         """
         self._model = model
         self._popup.set_model(model)
@@ -487,7 +486,7 @@ class ComboEntry(gtk.VBox):
         """
         Gets our model.
         :returns: model
-        :rtype: gtk.TreeModel
+        :rtype: Gtk.TreeModel
         """
         return self._model
 
@@ -495,7 +494,7 @@ class ComboEntry(gtk.VBox):
         """
         Set the iter selected.
         :param iter: iter to select
-        :type iter: gtk.TreeIter
+        :type iter: Gtk.TreeIter
         """
         self._popup.set_selected_iter(iter)
         text = self._model[iter][0]
@@ -506,7 +505,7 @@ class ComboEntry(gtk.VBox):
         """
         Gets the selected iter.
         :returns: iter selected.
-        :rtype: gtk.TreeIter
+        :rtype: Gtk.TreeIter
         """
         return self._popup.get_selected_iter()
 

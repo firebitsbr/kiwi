@@ -28,15 +28,15 @@
 
 """
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi.datatypes import number, ValueUnset
 from kiwi.ui.proxywidget import ProxyWidgetMixin, ValidatableProxyWidgetMixin
 from kiwi.utils import gsignal
 
 
-class ProxySpinButton(gtk.SpinButton, ValidatableProxyWidgetMixin):
+class ProxySpinButton(Gtk.SpinButton, ValidatableProxyWidgetMixin):
     """
     A SpinButton subclass which adds supports for the Kiwi Framework.
     This widget supports validation
@@ -45,12 +45,12 @@ class ProxySpinButton(gtk.SpinButton, ValidatableProxyWidgetMixin):
     """
     __gtype_name__ = 'ProxySpinButton'
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    mandatory = gobject.property(type=bool, default=False)
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    mandatory = GObject.property(type=bool, default=False)
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
@@ -60,7 +60,7 @@ class ProxySpinButton(gtk.SpinButton, ValidatableProxyWidgetMixin):
     def __init__(self, data_type=int):
         # since the default data_type is str we need to set it to int
         # or float for spinbuttons
-        gtk.SpinButton.__init__(self)
+        Gtk.SpinButton.__init__(self)
         ValidatableProxyWidgetMixin.__init__(self)
         self.props.data_type = data_type
         self.set_property('xalign', 1.0)
@@ -69,17 +69,19 @@ class ProxySpinButton(gtk.SpinButton, ValidatableProxyWidgetMixin):
         # We need to do this because spinbuttons are supposed to accept only
         # numbers.
         self.set_numeric(True)
+        self.connect_after('changed', self._on_changed)
 
-    gsignal('changed', 'override')
+    # FIXME gtk3
+    #gsignal('changed', 'override')
 
-    def do_changed(self):
+    def _on_changed(self, widget):
         """Called when the content of the spinbutton changes.
         """
         # This is a work around, because GtkEditable.changed is called too
         # often, as reported here: http://bugzilla.gnome.org/show_bug.cgi?id=64998
         if self.get_text() != '':
             self.emit('content-changed')
-            self.chain()
+            # self.chain()
 
     def read(self):
         return self._from_string(self.get_text())
@@ -106,9 +108,9 @@ class ProxySpinButton(gtk.SpinButton, ValidatableProxyWidgetMixin):
         self.set_property('primary-icon-pixbuf', pixbuf)
 
     def update_background(self, color):
-        self.modify_base(gtk.STATE_NORMAL, color)
+        self.modify_base(Gtk.StateType.NORMAL, color)
 
     def get_background(self):
-        return self.style.base[gtk.STATE_NORMAL]
+        return self.style.base[Gtk.StateType.NORMAL]
 
-gobject.type_register(ProxySpinButton)
+GObject.type_register(ProxySpinButton)

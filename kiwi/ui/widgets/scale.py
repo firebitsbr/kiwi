@@ -24,24 +24,18 @@
 
 """GtkHScale and GtkVScale support for the Kiwi Framework"""
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi import ValueUnset
 from kiwi.ui.proxywidget import ProxyWidgetMixin
 from kiwi.utils import gsignal, type_register
 
 
-class _ProxyScale:
+class _ProxyScale(object):
     # changed allowed data types because scales can only
     # accept float values
     allowed_data_types = float,
-
-    gsignal('value_changed', 'override')
-
-    def do_value_changed(self):
-        self.emit('content-changed')
-        self.chain()
 
     def read(self):
         return self.get_value()
@@ -53,39 +47,61 @@ class _ProxyScale:
             self.set_value(data)
 
 
-class ProxyHScale(_ProxyScale, ProxyWidgetMixin, gtk.HScale):
+class ProxyHScale(Gtk.HScale, _ProxyScale, ProxyWidgetMixin):
     __gtype_name__ = 'ProxyHScale'
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
+    gsignal('value_changed', 'override')
 
     def __init__(self):
-        gtk.HScale.__init__(self)
+        Gtk.HScale.__init__(self)
+        _ProxyScale.__init__(self)
         ProxyWidgetMixin.__init__(self)
+
         self.props.data_type = float
+        self.connect_after('value-changed', self._on_value_changed)
+
+    # FIXME gtk3
+    # gsignal('value_changed', 'override')
+
+    def _on_value_changed(self, widget):
+        self.emit('content-changed')
+        # self.chain()
 
 type_register(ProxyHScale)
 
 
-class ProxyVScale(_ProxyScale, ProxyWidgetMixin, gtk.VScale):
+class ProxyVScale(Gtk.VScale, _ProxyScale, ProxyWidgetMixin):
     __gtype_name__ = 'ProxyVScale'
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
+    gsignal('value_changed', 'override')
 
     def __init__(self):
-        gtk.VScale.__init__(self)
+        Gtk.HScale.__init__(self)
+        _ProxyScale.__init__(self)
         ProxyWidgetMixin.__init__(self)
+
         self.props.data_type = float
+        self.connect_after('value-changed', self._on_value_changed)
+
+    # FIXME gtk3
+    # gsignal('value_changed', 'override')
+
+    def _on_value_changed(self, widget):
+        self.emit('content-changed')
+        # self.chain()
 
 type_register(ProxyVScale)

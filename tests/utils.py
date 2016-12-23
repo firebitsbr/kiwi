@@ -4,10 +4,10 @@ import os
 import sys
 import time
 
-import gtk
+from gi.repository import Gtk
 try:
-    import pygtk
-    pygtk.require('2.0')
+    import gi
+    gi.require_version('Gtk', '3.0')
 except:
     pass
 from zope.interface import implementedBy, interface
@@ -17,8 +17,8 @@ from kiwi.python import ClassInittableObject, namedAny
 
 
 def refresh_gui(delay=0):
-    while gtk.events_pending():
-        gtk.main_iteration_do(block=False)
+    while Gtk.events_pending():
+        Gtk.main_iteration_do(False)
     time.sleep(delay)
 
 dir = os.path.dirname(__file__)

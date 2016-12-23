@@ -30,9 +30,9 @@ import logging
 import math
 
 import cairo
-import gobject
-import gtk
-from gtk import gdk
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Gdk
 
 from kiwi.utils import gsignal, type_register
 from kiwi.ui.pixbufutils import pixbuf_from_string
@@ -45,39 +45,39 @@ def gdk_color_to_string(color):
                               int(color.blue) >> 8)
 
 
-def set_foreground(widget, color, state=gtk.STATE_NORMAL):
+def set_foreground(widget, color, state=Gtk.StateType.NORMAL):
     """
     Set the foreground color of a widget:
 
       - widget: the widget we are changing the color
       - color: a hexadecimal code or a well known color name
-      - state: the state we are afecting, see gtk.STATE_*
+      - state: the state we are afecting, see Gtk.StateType.*
     """
-    widget.modify_fg(state, gdk.color_parse(color))
+    widget.modify_fg(state, Gdk.color_parse(color))
 
 
-def get_foreground(widget, state=gtk.STATE_NORMAL):
+def get_foreground(widget, state=Gtk.StateType.NORMAL):
     """Return the foreground color of the widget as a string"""
     style = widget.get_style()
     color = style.fg[state]
     return gdk_color_to_string(color)
 
 
-def set_background(widget, color, state=gtk.STATE_NORMAL):
+def set_background(widget, color, state=Gtk.StateType.NORMAL):
     """
     Set the background color of a widget:
 
       - widget: the widget we are changing the color
       - color: a hexadecimal code or a well known color name
-      - state: the state we are afecting, see gtk.STATE_*
+      - state: the state we are afecting, see Gtk.StateType.*
     """
-    if isinstance(widget, gtk.Entry):
-        widget.modify_base(state, gdk.color_parse(color))
+    if isinstance(widget, Gtk.Entry):
+        widget.modify_base(state, Gdk.color_parse(color))
     else:
-        widget.modify_bg(state, gdk.color_parse(color))
+        widget.modify_bg(state, Gdk.color_parse(color))
 
 
-def get_background(widget, state=gtk.STATE_NORMAL):
+def get_background(widget, state=Gtk.StateType.NORMAL):
     """Return the background color of the widget as a string"""
     style = widget.get_style()
     color = style.bg[state]
@@ -86,15 +86,15 @@ def get_background(widget, state=gtk.STATE_NORMAL):
 
 def quit_if_last(*args):
     windows = [toplevel
-               for toplevel in gtk.window_list_toplevels()
-               if toplevel.get_property('type') == gtk.WINDOW_TOPLEVEL]
+               for toplevel in Gtk.Window.list_toplevels()
+               if toplevel.get_property('type') == Gtk.WindowType.TOPLEVEL]
     if len(windows) == 1:
-        gtk.main_quit()
+        Gtk.main_quit()
 
 
 def _select_notebook_tab(widget, event, notebook):
     val = event.keyval - 48
-    if event.state & gdk.MOD1_MASK and 1 <= val <= 9:
+    if event.get_state() & Gdk.ModifierType.MOD1_MASK and 1 <= val <= 9:
         notebook.set_current_page(val - 1)
 
 
@@ -102,12 +102,12 @@ def register_notebook_shortcuts(dialog, notebook):
     dialog.toplevel.connect('key-press-event', _select_notebook_tab, notebook)
 
 
-class FadeOut(gobject.GObject):
+class FadeOut(GObject.GObject):
     """I am a helper class to draw the fading effect of the background
     Call my methods start() and stop() to control the fading.
     """
     gsignal('done')
-    gsignal('color-changed', gdk.Color)
+    gsignal('color-changed', Gdk.Color)
 
     # How long time it'll take before we start (in ms)
     COMPLAIN_DELAY = 500
@@ -117,7 +117,7 @@ class FadeOut(gobject.GObject):
     ERROR_COLOR = "#ffd5d5"
 
     def __init__(self, widget):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
         self._widget = widget
         self._start_color = None
         self._background_timeout_id = -1
@@ -145,7 +145,7 @@ class FadeOut(gobject.GObject):
             rs += rinc
             gs += ginc
             bs += binc
-            col = gdk.color_parse("#%02X%02X%02X" % (int(rs) >> 8,
+            col = Gdk.color_parse("#%02X%02X%02X" % (int(rs) >> 8,
                                                      int(gs) >> 8,
                                                      int(bs) >> 8))
             self.emit('color-changed', col)
@@ -164,9 +164,9 @@ class FadeOut(gobject.GObject):
 
         self._log.debug('_start_merging: Starting')
         func = self._merge_colors(self._start_color,
-                                  gdk.color_parse(FadeOut.ERROR_COLOR)).next
+                                  Gdk.color_parse(FadeOut.ERROR_COLOR)).next
         self._background_timeout_id = (
-            gobject.timeout_add(FadeOut.MERGE_COLORS_DELAY, func))
+            GObject.timeout_add(FadeOut.MERGE_COLORS_DELAY, func))
         self._countdown_timeout_id = -1
 
     def start(self, color):
@@ -186,7 +186,7 @@ class FadeOut(gobject.GObject):
 
         self._start_color = color
         self._log.debug('start: Scheduling')
-        self._countdown_timeout_id = gobject.timeout_add(
+        self._countdown_timeout_id = GObject.timeout_add(
             FadeOut.COMPLAIN_DELAY, self._start_merging)
 
         return True
@@ -195,10 +195,10 @@ class FadeOut(gobject.GObject):
         """Stops the fadeout and restores the background color"""
         self._log.debug('Stopping')
         if self._background_timeout_id != -1:
-            gobject.source_remove(self._background_timeout_id)
+            GObject.source_remove(self._background_timeout_id)
             self._background_timeout_id = -1
         if self._countdown_timeout_id != -1:
-            gobject.source_remove(self._countdown_timeout_id)
+            GObject.source_remove(self._countdown_timeout_id)
             self._countdown_timeout_id = -1
 
         self._widget.update_background(self._start_color)
@@ -221,7 +221,7 @@ def draw_editable_border(widget, drawable, cell_area):
     # the bg colors and used for creating shadows. That's perfect here since
     # it will indicate that the border is editable and won't "vanish"
     # when the row is really activated
-    cr.set_source_color(style.dark[gtk.STATE_SELECTED])
+    cr.set_source_color(style.dark[Gtk.StateType.SELECTED])
     cr.stroke()
 
 
@@ -245,7 +245,7 @@ def render_pixbuf(color_name, width=16, height=16, radius=4):
         cr.arc(radius, width - radius, radius, pi2, math.pi)
         cr.close_path()
 
-        color = gtk.gdk.color_parse(color_name)
+        color = Gdk.color_parse(color_name)
         cr.set_source_rgb(
             float(color.red) / 65536,
             float(color.green) / 65536,

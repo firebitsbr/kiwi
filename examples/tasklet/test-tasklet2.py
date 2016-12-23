@@ -9,9 +9,7 @@ import os
 import subprocess
 import sys
 
-import gobject
-import gtk
-import pango
+from gi.repository import GObject, Gtk, Gdk, Pango
 
 from kiwi import tasklet
 
@@ -59,16 +57,16 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    win = gtk.Window()
-    textview = gtk.TextView()
-    textview.modify_font(pango.FontDescription("Monospace"))
+    win = Gtk.Window()
+    textview = Gtk.TextView()
+    textview.modify_font(Pango.FontDescription("Monospace"))
     textview.show()
-    sw = gtk.ScrolledWindow()
+    sw = Gtk.ScrolledWindow()
     sw.add(textview)
     sw.show()
     win.add(sw)
-    win.set_default_size(gtk.gdk.screen_width() * 2 / 3,
-                         gtk.gdk.screen_height() * 2 / 3)
+    win.set_default_size(Gdk.Screen.width() * 2 / 3,
+                         Gdk.Screen.height() * 2 / 3)
     win.show()
 
     ## launch process
@@ -76,8 +74,8 @@ def main():
                             bufsize=1, close_fds=True)
     win.set_title("%s (running)" % args[0])
     # print proc.stdout, type(proc.stdout), dir(proc.stdout)
-    chan = gobject.IOChannel(filedes=proc.stdout.fileno())
-    chan.set_flags(gobject.IO_FLAG_NONBLOCK)
+    chan = GObject.IOChannel(filedes=proc.stdout.fileno())
+    chan.set_flags(GObject.IO_FLAG_NONBLOCK)
     sink = tasklet.run(process_stdout_sink(chan, textview.get_buffer(),
                                            textview))
 
@@ -87,15 +85,15 @@ def main():
 
     if isinstance(tasklet.get_event(), tasklet.WaitForSignal):
         killproc(proc.pid)
-        gtk.main_quit()
+        Gtk.main_quit()
     else:
         ## stop reader
         yield tasklet.Message("quit", dest=sink)
         win.set_title("%s (completed)" % args[0])
         yield tasklet.WaitForSignal(win, "destroy")
         tasklet.get_event()
-        gtk.main_quit()
+        Gtk.main_quit()
 
 if __name__ == '__main__':
     tasklet.run(main())
-    gtk.main()
+    Gtk.main()

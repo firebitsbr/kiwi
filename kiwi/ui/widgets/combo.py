@@ -37,8 +37,8 @@ try:
 except AttributeError:
     from sets import Set as set
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi import ValueUnset
 from kiwi.component import implements
@@ -58,12 +58,12 @@ class _EasyComboBoxHelper(object):
 
     def __init__(self, combobox):
         """Call this constructor after the Combo one"""
-        if not isinstance(combobox, (gtk.ComboBox, ComboEntry)):
+        if not isinstance(combobox, (Gtk.ComboBox, ComboEntry)):
             raise TypeError(
-                "combo needs to be a gtk.ComboBox or ComboEntry instance")
+                "combo needs to be a Gtk.ComboBox or ComboEntry instance")
         self._combobox = combobox
 
-        model = gtk.ListStore(str, object)
+        model = Gtk.ListStore(str, object)
         self._combobox.set_model(model)
 
         self.mode = ComboMode.UNKNOWN
@@ -267,29 +267,29 @@ class _EasyComboBoxHelper(object):
         return None
 
 
-class ProxyComboBox(gtk.ComboBox, ProxyWidgetMixin):
+class ProxyComboBox(Gtk.ComboBox, ProxyWidgetMixin):
 
     __gtype_name__ = 'ProxyComboBox'
     allowed_data_types = (basestring, object) + number
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
 
     def __init__(self):
         self._color_attribute = None
-        gtk.ComboBox.__init__(self)
+        GObject.GObject.__init__(self)
         ProxyWidgetMixin.__init__(self)
         self._helper = _EasyComboBoxHelper(self)
         self.connect('changed', self._on__changed)
 
-        self._text_renderer = gtk.CellRendererText()
-        self.pack_start(self._text_renderer)
+        self._text_renderer = Gtk.CellRendererText()
+        self.pack_start(self._text_renderer, True)
         self.add_attribute(self._text_renderer, 'text', ComboColumn.LABEL)
 
     def __len__(self):
@@ -318,7 +318,7 @@ class ProxyComboBox(gtk.ComboBox, ProxyWidgetMixin):
             renderer.set_property('pixbuf',
                                   render_pixbuf(category and category.color))
 
-        renderer = gtk.CellRendererPixbuf()
+        renderer = Gtk.CellRendererPixbuf()
         self.pack_start(renderer, False)
         self.reorder(renderer, 0)
         self.set_cell_data_func(renderer, cell_data_func)
@@ -326,7 +326,7 @@ class ProxyComboBox(gtk.ComboBox, ProxyWidgetMixin):
 
     def get_color_attribute(self):
         return self._color_attribute
-    color_attribute = gobject.property(
+    color_attribute = GObject.property(
         getter=get_color_attribute,
         setter=set_color_attribute,
         type=str, blurb='Color attribute')
@@ -451,19 +451,19 @@ class ProxyComboBox(gtk.ComboBox, ProxyWidgetMixin):
         """
         return self._helper.get_selected()
 
-gobject.type_register(ProxyComboBox)
+GObject.type_register(ProxyComboBox)
 
 
 class ProxyComboEntry(ComboEntry, ValidatableProxyWidgetMixin):
     __gtype_name__ = 'ProxyComboEntry'
     allowed_data_types = (basestring, object) + number
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    mandatory = gobject.property(type=bool, default=False)
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    mandatory = GObject.property(type=bool, default=False)
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
@@ -489,7 +489,7 @@ class ProxyComboEntry(ComboEntry, ValidatableProxyWidgetMixin):
 
     def _set_list_editable(self, value):
         self.entry.set_editable(value)
-    list_editable = gobject.property(getter=_get_list_editable,
+    list_editable = GObject.property(getter=_get_list_editable,
                                      setter=_set_list_editable,
                                      type=bool, default=True,
                                      nick="Editable")
@@ -535,4 +535,4 @@ class ProxyComboEntry(ComboEntry, ValidatableProxyWidgetMixin):
     def get_selected_data(self):
         return self.entry.read()
 
-gobject.type_register(ProxyComboEntry)
+GObject.type_register(ProxyComboEntry)

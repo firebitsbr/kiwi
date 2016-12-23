@@ -27,13 +27,12 @@
 
 
 import glib
-import gobject
-import gtk
+from gi.repository import GObject, Gtk, Gdk
 
 from kiwi.utils import gsignal, type_register
 
 
-class HyperLink(gtk.EventBox):
+class HyperLink(Gtk.EventBox):
     """
     A hyperlink widget.
 
@@ -48,16 +47,16 @@ class HyperLink(gtk.EventBox):
 
     __gtype_name__ = 'HyperLink'
 
-    text = gobject.property(type=str, default='')
-    normal_color = gobject.property(type=str, default='#0000c0')
-    normal_underline = gobject.property(type=bool, default=False)
-    normal_bold = gobject.property(type=bool, default=False)
-    hover_color = gobject.property(type=str, default='#0000c0')
-    hover_underline = gobject.property(type=bool, default=True)
-    hover_bold = gobject.property(type=bool, default=False)
-    active_color = gobject.property(type=str, default='#c00000')
-    active_underline = gobject.property(type=bool, default=True)
-    active_bold = gobject.property(type=bool, default=False)
+    text = GObject.property(type=str, default='')
+    normal_color = GObject.property(type=str, default='#0000c0')
+    normal_underline = GObject.property(type=bool, default=False)
+    normal_bold = GObject.property(type=bool, default=False)
+    hover_color = GObject.property(type=str, default='#0000c0')
+    hover_underline = GObject.property(type=bool, default=True)
+    hover_bold = GObject.property(type=bool, default=False)
+    active_color = GObject.property(type=str, default='#c00000')
+    active_underline = GObject.property(type=bool, default=True)
+    active_bold = GObject.property(type=bool, default=False)
 
     gsignal('clicked')
     gsignal('right-clicked')
@@ -69,7 +68,7 @@ class HyperLink(gtk.EventBox):
         :param text: The text of the hyperlink.
         :type text: str
         """
-        gtk.EventBox.__init__(self)
+        GObject.GObject.__init__(self)
         self.set_above_child(False)
         self.set_visible_window(False)
         self._gproperties = {}
@@ -78,12 +77,12 @@ class HyperLink(gtk.EventBox):
         self._is_active = False
         self._is_hover = False
         self._menu = menu
-        self._label = gtk.Label()
+        self._label = Gtk.Label()
         self.add(self._label)
-        self.add_events(gtk.gdk.BUTTON_PRESS_MASK |
-                        gtk.gdk.BUTTON_RELEASE_MASK |
-                        gtk.gdk.ENTER_NOTIFY_MASK |
-                        gtk.gdk.LEAVE_NOTIFY_MASK)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK |
+                        Gdk.EventMask.BUTTON_RELEASE_MASK |
+                        Gdk.EventMask.ENTER_NOTIFY_MASK |
+                        Gdk.EventMask.LEAVE_NOTIFY_MASK)
         self.connect('button-press-event', self._on_button_press_event)
         self.connect('button-release-event', self._on_button_release_event)
         self.connect('enter-notify-event', self._on_hover_changed, True)
@@ -114,8 +113,8 @@ class HyperLink(gtk.EventBox):
         """
         Set the menu to be used for popups.
 
-        :param menu: the gtk.Menu to be used.
-        :type menu: gtk.Menu
+        :param menu: the Gtk.Menu to be used.
+        :type menu: Gtk.Menu
         """
         self._menu = menu
 
@@ -132,10 +131,10 @@ class HyperLink(gtk.EventBox):
         """
         Popup the menu and emit the popup signal.
 
-        :param menu: The gtk.Menu to be popped up. This menu will be
+        :param menu: The Gtk.Menu to be popped up. This menu will be
             used instead of the internally set menu. If this parameter is not
             passed or None, the internal menu will be used.
-        :type menu: gtk.Menu
+        :type menu: Gtk.Menu
         :param button: An integer representing the button number pressed to
             cause the popup action.
         :type button: int
@@ -207,7 +206,7 @@ class HyperLink(gtk.EventBox):
             self._is_active = True
             self._update_look()
         elif event.button == 3:
-            if event.type == gtk.gdk.BUTTON_PRESS:
+            if event.type == Gdk.EventType.BUTTON_PRESS:
                 self.popup(button=event.button, etime=event.time)
 
     def _on_button_release_event(self, eventbox, event):
@@ -252,7 +251,7 @@ class HyperLink(gtk.EventBox):
 
         Used here to set the cursor type.
         """
-        cursor = gtk.gdk.Cursor(gtk.gdk.HAND1)
+        cursor = Gdk.Cursor.new(Gdk.HAND1)
         self.window.set_cursor(cursor)
 
 type_register(HyperLink)

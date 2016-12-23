@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from sets import Set
 
-import gtk
+from gi.repository import Gtk
 
 from kiwi.ui.views import BaseView
 from kiwi.ui.widgets.combo import ComboBox
@@ -28,11 +28,11 @@ class Color:
 
 class FavouriteColor(BaseView):
     def __init__(self):
-        win = gtk.Window()
+        win = Gtk.Window()
         win.set_title("Silly question")
         win.set_border_width(12)
-        label = gtk.Label("What is your favourite color?")
-        box = gtk.VBox(spacing=6)
+        label = Gtk.Label(label="What is your favourite color?")
+        box = Gtk.VBox(spacing=6)
         box.pack_start(label, False)
         self.combo = ComboBox()
         self.combo.data_type = str
@@ -47,5 +47,5 @@ the_color = Color()
 app = FavouriteColor()
 app.add_proxy(the_color, ['combo'])
 app.show_all()
-gtk.main()
+Gtk.main()
 print 'Your favourite color is', the_color.color

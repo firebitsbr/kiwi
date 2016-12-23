@@ -15,31 +15,30 @@
 
 """ColorButton proxy for the kiwi framework"""
 
-import gobject
-import gtk
+from gi.repository import GObject, Gtk, Gdk
 
 from kiwi.datatypes import ValueUnset
 from kiwi.ui.proxywidget import ProxyWidgetMixin
 from kiwi.utils import gsignal, type_register
 
 
-class ProxyColorButton(gtk.ColorButton, ProxyWidgetMixin):
+class ProxyColorButton(Gtk.ColorButton, ProxyWidgetMixin):
     __gtype_name__ = 'ProxyColorButton'
 
-    data_type = gobject.property(
+    data_type = GObject.property(
         getter=ProxyWidgetMixin.get_data_type,
         setter=ProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
 
     allowed_data_types = (basestring, )
 
-    def __init__(self, color=gtk.gdk.Color(0, 0, 0)):
+    def __init__(self, color=Gdk.Color(0, 0, 0)):
         ProxyWidgetMixin.__init__(self)
-        gtk.ColorButton.__init__(self, color)
+        GObject.GObject.__init__(self, color)
 
     gsignal('color-set', 'override')
 
@@ -55,7 +54,7 @@ class ProxyColorButton(gtk.ColorButton, ProxyWidgetMixin):
     def update(self, data):
         if data is ValueUnset or data is None:
             data = 'black'
-        color = gtk.gdk.color_parse(data)
+        color = Gdk.color_parse(data)
         self.set_color(color)
 
 

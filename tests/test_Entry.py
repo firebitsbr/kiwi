@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi import ValueUnset
 from kiwi import datatypes
@@ -80,10 +80,10 @@ class EntryTest(unittest.TestCase):
 
     def testGType(self):
         entry = KiwiEntry()
-        self.assertEqual(gobject.type_name(entry), 'KiwiEntry')
+        self.assertEqual(GObject.type_name(entry), 'KiwiEntry')
 
         entry = ProxyEntry()
-        self.assertEqual(gobject.type_name(entry), 'ProxyEntry')
+        self.assertEqual(GObject.type_name(entry), 'ProxyEntry')
 
     def testRead(self):
         # int without mask
@@ -145,33 +145,33 @@ class EntryTest(unittest.TestCase):
         self.assertIs(entry.read(), None)
 
     def testGobjectNew(self):
-        entry = gobject.new(ProxyEntry)
+        entry = GObject.new(ProxyEntry)
         self.assertEqual(entry.get_property('data_type'), None)
 
-        entry = gobject.new(ProxyEntry, data_type=int)
+        entry = GObject.new(ProxyEntry, data_type=int)
         entry.set_property("data-type", str)
         self.assertEqual(entry.get_property('data_type'), 'str')
-        while gtk.events_pending():
-            gtk.main_iteration()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
         self.assertEqual(entry.get_property('data_type'), 'str')
 
-        entry = gobject.new(ProxyEntry, data_type=int)
+        entry = GObject.new(ProxyEntry, data_type=int)
         self.assertEqual(entry.get_property('data_type'), 'int')
         entry.set_property("data-type", str)
-        while gtk.events_pending():
-            gtk.main_iteration()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
         self.assertEqual(entry.get_property('data_type'), 'str')
 
     def testIdleAddedProperly(self):
         entry = ProxyEntry()
         entry.set_property("data-type", "int")
-        while gtk.events_pending():
-            gtk.main_iteration()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
         self.assertEqual(entry.get_property('data_type'), 'int')
 
         entry = ProxyEntry(data_type=str)
-        while gtk.events_pending():
-            gtk.main_iteration()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
         self.assertEqual(entry.get_property('data_type'), 'str')
         entry.set_property("data-type", int)
         self.assertEqual(entry.get_property('data_type'), 'int')
@@ -179,8 +179,8 @@ class EntryTest(unittest.TestCase):
         entry = ProxyEntry(data_type=str)
         self.assertEqual(entry.get_property('data_type'), 'str')
         entry.set_property("data-type", int)
-        while gtk.events_pending():
-            gtk.main_iteration()
+        while Gtk.events_pending():
+            Gtk.main_iteration()
         self.assertEqual(entry.get_property('data_type'), 'int')
 
     def testCorrectlySetsEmptyString(self):

@@ -25,20 +25,19 @@
 Common routines used by other parts of the ui test framework.
 """
 
-import gobject
-import gtk
-from gtk import gdk
-from gtk.gdk import event_handler_set
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import Gdk
 
 from kiwi.utils import gsignal
 
 
-class WidgetIntrospecter(gobject.GObject):
+class WidgetIntrospecter(GObject.GObject):
     gsignal('window-added', object, str, object)
     gsignal('window-removed', object, str)
 
     def __init__(self):
-        gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
         self._objects = {}
         self._id_to_obj = {}  # GdkWindow -> GtkWindow
         self._windows = {}  # toplevels ?
@@ -46,13 +45,13 @@ class WidgetIntrospecter(gobject.GObject):
     def _event_handler(self, event):
         # Separate method so we can use return inside
         self._check_event(event)
-        gtk.main_do_event(event)
+        Gtk.main_do_event(event)
 
     def _check_event(self, event):
-        if not event.window:
+        window = event.get_window()
+        if not window:
             return
 
-        window = event.window
         event_type = event.type
         window_type = window.get_window_type()
         try:
@@ -60,30 +59,30 @@ class WidgetIntrospecter(gobject.GObject):
         except ValueError:
             widget = self._id_to_obj.get(window)
 
-        if not isinstance(widget, gtk.Window):
+        if not isinstance(widget, Gtk.Window):
             return
         widget_name = widget.get_name()
 
-        if event_type == gdk.MAP:
-            if window_type != gdk.WINDOW_TOPLEVEL:
+        if event_type == Gdk.MAP:
+            if window_type != Gdk.WINDOW_TOPLEVEL:
                 # For non toplevels we only care about those which has a menu
                 # as the child
-                child = widget.child
-                if not child or not isinstance(child, gtk.Menu):
+                child = widget.get_child()
+                if not child or not isinstance(child, Gtk.Menu):
                     return
 
                 # Hack to get all the children of a popup menu in
                 # the same namespace as the window they were launched in.
-                parent_menu = child.get_data('parent-menu')
+                parent_menu = child._parent_menu
                 if parent_menu:
                     main = parent_menu.get_toplevel()
                     widget_name = main.get_name()
             else:
                 self._window_added(widget, widget_name)
                 self._id_to_obj[window] = widget
-        elif (event_type == gdk.DELETE or
-              (event_type == gdk.WINDOW_STATE and
-               event.new_window_state == gdk.WINDOW_STATE_WITHDRAWN)):
+        elif (event_type == Gdk.DELETE or
+              (event_type == Gdk.WINDOW_STATE and
+               event.new_window_state == Gdk.WindowState.WITHDRAWN)):
             self._window_removed(widget, widget_name)
 
     def _window_added(self, window, name):
@@ -134,25 +133,25 @@ class WidgetIntrospecter(gobject.GObject):
     # Public API
 
     def register_event_handler(self):
-        if not event_handler_set:
+        if not Gdk.event_handler_set:
             raise NotImplementedError
-        event_handler_set(self._event_handler)
+        Gdk.event_handler_set(self._event_handler)
 
     def parse_one(self, toplevel, gobj):
-        if not isinstance(gobj, gobject.GObject):
+        if not isinstance(gobj, GObject.GObject):
             raise TypeError
 
         gtype = gobj
         while True:
-            name = gobject.type_name(gtype)
+            name = GObject.type_name(gtype)
             func = getattr(self, name, None)
             if func:
                 if func(toplevel, gobj):
                     break
-            if gtype == gobject.GObject.__gtype__:
+            if gtype == GObject.GObject.__gtype__:
                 break
 
-            gtype = gobject.type_parent(gtype)
+            gtype = GObject.type_parent(gtype)
 
     #
     # Special widget handling
@@ -168,7 +167,7 @@ class WidgetIntrospecter(gobject.GObject):
         Called when a GtkWidget is about to be traversed
         """
         # Workaround to support gtkbuilder and gazpacho
-        name = gtk.Buildable.get_name(widget)
+        name = Gtk.Buildable.get_name(widget)
         if not name:
             name = widget.get_name()
         self._add_widget(toplevel, widget, name)
@@ -205,12 +204,12 @@ class WidgetIntrospecter(gobject.GObject):
         """
         submenu = item.get_submenu()
         if submenu:
-            submenu.set_data('parent-menu', item)
+            submenu._parent_menu = item
             for child_item in submenu.get_children():
-                child_item.set_data('parent-menu', item)
+                child_item._parent_menu = item
             self.parse_one(toplevel, submenu)
 
     def GtkToolButton(self, toplevel, item):
-        item.child.set_name(item.get_name())
+        item.get_child().set_name(item.get_name())
 
-gobject.type_register(WidgetIntrospecter)
+GObject.type_register(WidgetIntrospecter)

@@ -35,14 +35,12 @@ try:
 except NameError:
     from sets import Set as set
 
-import gobject
-import pango
-import gtk
+from gi.repository import GObject, Gtk, Gdk, Pango
 
 from kiwi.enums import Direction
 from kiwi.python import strip_accents
 from kiwi.ui.entrycompletion import KiwiEntryCompletion
-from kiwi.utils import type_register
+from kiwi.utils import gsignal, type_register
 
 
 class MaskError(Exception):
@@ -80,7 +78,7 @@ INPUT_CHAR_MAP = {
 _ = lambda msg: gettext.dgettext('kiwi', msg)
 
 
-class KiwiEntry(gtk.Entry):
+class KiwiEntry(Gtk.Entry):
     """
     The KiwiEntry is a Entry subclass with the following additions:
 
@@ -102,14 +100,17 @@ class KiwiEntry(gtk.Entry):
     """
     __gtype_name__ = 'KiwiEntry'
 
-    completion_ignore_case = gobject.property(type=bool, default=True)
-    completion_ignore_accents = gobject.property(type=bool, default=True)
-    completion_hightlight_match = gobject.property(type=bool, default=True)
+    # FIXME gtk3 discover why we had to move this from ProxyEntry to here
+    gsignal('content-changed')
+    completion_ignore_case = GObject.property(type=bool, default=True)
+    completion_ignore_accents = GObject.property(type=bool, default=True)
+    completion_hightlight_match = GObject.property(type=bool, default=True)
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._completion = None
 
-        gtk.Entry.__init__(self)
+        super(KiwiEntry, self).__init__(**kwargs)
+
         self._update_position()
         self.connect('insert-text', self._on_insert_text)
         self.connect('delete-text', self._on_delete_text)
@@ -162,7 +163,7 @@ class KiwiEntry(gtk.Entry):
         except MaskError:
             pass
 
-    mask = gobject.property(getter=_get_mask,
+    mask = GObject.property(getter=_get_mask,
                             setter=_set_mask,
                             type=str, default='')
 
@@ -180,7 +181,7 @@ class KiwiEntry(gtk.Entry):
             self.delete_text(0, -1)
             self.insert_text(text, 0)
         else:
-            gtk.Entry.set_text(self, text)
+            Gtk.Entry.set_text(self, text)
 
         if isinstance(completion, KiwiEntryCompletion):
             self.handler_unblock(completion.changed_id)
@@ -206,7 +207,7 @@ class KiwiEntry(gtk.Entry):
         :param mask: the mask to set
         """
         if not mask:
-            self.modify_font(pango.FontDescription("sans"))
+            self.modify_font(Pango.FontDescription("sans"))
             self._mask = mask
             return
 
@@ -219,7 +220,7 @@ class KiwiEntry(gtk.Entry):
             else:
                 self._mask_validators.append(c)
 
-        self.modify_font(pango.FontDescription("monospace"))
+        self.modify_font(Pango.FontDescription("monospace"))
 
         self._really_delete_text(0, -1)
         self._mask = mask
@@ -424,7 +425,7 @@ class KiwiEntry(gtk.Entry):
         if completion:
             return completion
 
-        completion = gtk.EntryCompletion()
+        completion = Gtk.EntryCompletion()
         self.set_completion(completion)
         return completion
 
@@ -444,10 +445,10 @@ class KiwiEntry(gtk.Entry):
             completion.connect("match-selected",
                                self._on_completion__match_selected)
         else:
-            gtk.Entry.set_completion(self, completion)
+            Gtk.Entry.set_completion(self, completion)
 
         self._completion = completion
-        completion.set_model(gtk.ListStore(str, object))
+        completion.set_model(Gtk.ListStore(str, object))
         completion.set_text_column(0)
 
         if self._exact_completion:
@@ -549,17 +550,17 @@ class KiwiEntry(gtk.Entry):
 
     def _update_position(self):
         if self.get_property('xalign') > 0.5:
-            self._icon_pos = gtk.POS_LEFT
+            self._icon_pos = Gtk.PositionType.LEFT
         else:
-            self._icon_pos = gtk.POS_RIGHT
+            self._icon_pos = Gtk.PositionType.RIGHT
 
         # If the text is right to left, we have to use the oposite side
-        RTL = gtk.widget_get_default_direction() == gtk.TEXT_DIR_RTL
+        RTL = Gtk.Widget.get_default_direction() == Gtk.TextDirection.RTL
         if RTL:
-            if self._icon_pos == gtk.POS_LEFT:
-                self._icon_pos = gtk.POS_RIGHT
+            if self._icon_pos == Gtk.PositionType.LEFT:
+                self._icon_pos = Gtk.PositionType.RIGHT
             else:
-                self._icon_pos = gtk.POS_LEFT
+                self._icon_pos = Gtk.PositionType.LEFT
 
     # Callbacks
 
@@ -591,7 +592,7 @@ class KiwiEntry(gtk.Entry):
             pos = self.get_position()
 
         if pos >= len(text):
-            gtk.gdk.beep()
+            Gdk.beep()
             return
 
         for c in unicode(new):
@@ -601,7 +602,7 @@ class KiwiEntry(gtk.Entry):
             # invalid), it will insert vv and stop after that, beeping.
             # We cannot simply skip it as the order of a string matters
             if pos is None:
-                gtk.gdk.beep()
+                Gdk.beep()
                 return
             pos += 1
 
@@ -656,7 +657,7 @@ class KiwiEntry(gtk.Entry):
         # This will happen if there was a static char at the beggining and
         # someone pressed backspace on it. Nothing to do
         if start < 0:
-            gtk.gdk.beep()
+            Gdk.beep()
             return
 
         for pos in reversed(xrange(start, end)):
@@ -730,24 +731,24 @@ class KiwiEntry(gtk.Entry):
     # Old IconEntry API
 
     def set_tooltip(self, text):
-        if self._icon_pos == gtk.POS_LEFT:
+        if self._icon_pos == Gtk.PositionType.LEFT:
             icon = 'primary-icon-tooltip-text'
         else:
             icon = 'secondary-icon-tooltip-text'
         self.set_property(icon, text)
 
     def set_pixbuf(self, pixbuf):
-        if self._icon_pos == gtk.POS_LEFT:
+        if self._icon_pos == Gtk.PositionType.LEFT:
             icon = 'primary-icon-pixbuf'
         else:
             icon = 'secondary-icon-pixbuf'
         self.set_property(icon, pixbuf)
 
     def update_background(self, color):
-        self.modify_base(gtk.STATE_NORMAL, color)
+        self.modify_base(Gtk.StateType.NORMAL, color)
 
     def get_background(self):
-        return self.style.base[gtk.STATE_NORMAL]
+        return self.style.base[Gtk.StateType.NORMAL]
 
     # IComboMixin
 
@@ -819,8 +820,9 @@ class KiwiEntry(gtk.Entry):
                 return row.iter
                 break
         else:
+            # FIXME gtk3 why self.name is not valid anymore?
             raise KeyError("No item correspond to data %r in the combo %s"
-                           % (data, self.name))
+                           % (data, self))
 
     def get_iter_by_label(self, label):
         completion = self._get_entry_completion()
@@ -829,8 +831,9 @@ class KiwiEntry(gtk.Entry):
             if row[COL_TEXT] == label:
                 return row.iter
         else:
+            # FIXME gtk3 why self.name is not valid anymore?
             raise KeyError("No item correspond to label %r in the combo %s"
-                           % (label, self.name))
+                           % (label, self))
 
     def get_selected_by_iter(self, treeiter):
         completion = self._get_entry_completion()
@@ -893,11 +896,11 @@ type_register(KiwiEntry)
 
 
 if __name__ == '__main__':
-    win = gtk.Window()
-    win.set_title('gtk.Entry subclass')
+    win = Gtk.Window()
+    win.set_title('Gtk.Entry subclass')
 
     def cb(window, event):
-        gtk.main_quit()
+        Gtk.main_quit()
     win.connect('delete-event', cb)
 
     widget = KiwiEntry()
@@ -909,4 +912,4 @@ if __name__ == '__main__':
     win.show_all()
 
     widget.select_region(0, 0)
-    gtk.main()
+    Gtk.main()

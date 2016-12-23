@@ -27,8 +27,8 @@
 
 import datetime
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi import ValueUnset
 from kiwi.datatypes import number
@@ -36,26 +36,26 @@ from kiwi.ui.proxywidget import ValidatableProxyWidgetMixin
 from kiwi.utils import gsignal
 
 
-class ProxyTextView(gtk.TextView, ValidatableProxyWidgetMixin):
+class ProxyTextView(Gtk.TextView, ValidatableProxyWidgetMixin):
     __gtype_name__ = 'ProxyTextView'
-    data_value = gobject.property(type=str, nick='Data Value')
-    data_type = gobject.property(
+    data_value = GObject.property(type=str, nick='Data Value')
+    data_type = GObject.property(
         getter=ValidatableProxyWidgetMixin.get_data_type,
         setter=ValidatableProxyWidgetMixin.set_data_type,
         type=str, blurb='Data Type')
-    mandatory = gobject.property(type=bool, default=False)
-    model_attribute = gobject.property(type=str, blurb='Model attribute')
+    mandatory = GObject.property(type=bool, default=False)
+    model_attribute = GObject.property(type=str, blurb='Model attribute')
     gsignal('content-changed')
     gsignal('validation-changed', bool)
     gsignal('validate', object, retval=object)
     allowed_data_types = (basestring, datetime.date) + number
 
     def __init__(self):
-        gtk.TextView.__init__(self)
-        self.props.data_type = str
+        Gtk.TextView.__init__(self)
         ValidatableProxyWidgetMixin.__init__(self)
 
-        self._textbuffer = gtk.TextBuffer()
+        self.data_type = str
+        self._textbuffer = Gtk.TextBuffer()
         self._textbuffer.connect('changed',
                                  self._on_textbuffer__changed)
         self.set_buffer(self._textbuffer)
@@ -67,7 +67,8 @@ class ProxyTextView(gtk.TextView, ValidatableProxyWidgetMixin):
     def read(self):
         textbuffer = self._textbuffer
         data = textbuffer.get_text(textbuffer.get_start_iter(),
-                                   textbuffer.get_end_iter())
+                                   textbuffer.get_end_iter(),
+                                   True)
         return self._from_string(data)
 
     def update(self, data):
@@ -80,4 +81,4 @@ class ProxyTextView(gtk.TextView, ValidatableProxyWidgetMixin):
             self.emit('validation-changed', bool(text))
         self._textbuffer.set_text(text)
 
-gobject.type_register(ProxyTextView)
+GObject.type_register(ProxyTextView)

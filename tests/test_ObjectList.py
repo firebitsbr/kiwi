@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import unittest
 
-import gobject
-import gtk
+from gi.repository import GObject
+from gi.repository import Gtk
 
 from kiwi.datatypes import converter
 from kiwi.ui.objectlist import ObjectList, ObjectTree, Column
@@ -24,7 +24,7 @@ persons = (Person('Johan', 24), Person('Gustavo', 25),
 class ColumnTests(unittest.TestCase):
 
     def setUp(self):
-        self.win = gtk.Window()
+        self.win = Gtk.Window()
         self.win.set_default_size(400, 400)
 
     def tearDown(self):
@@ -51,7 +51,7 @@ class ColumnTests(unittest.TestCase):
         self.assertEquals(column.attribute, "foo")
 
     def testGObjectNew(self):
-        column = gobject.new(Column, attribute='foo')
+        column = GObject.new(Column, attribute='foo')
         self.assertEquals(column.attribute, "foo")
 
     def testCompareFunc(self):
@@ -74,7 +74,7 @@ class ColumnTests(unittest.TestCase):
 class DataTests(unittest.TestCase):
     """In all this tests we use the same configuration for a list"""
     def setUp(self):
-        self.win = gtk.Window()
+        self.win = Gtk.Window()
         self.win.set_default_size(400, 400)
         self.list = ObjectList([Column('name'), Column('age')])
         self.win.add(self.list)
@@ -194,7 +194,7 @@ class DataTests(unittest.TestCase):
 
 class TreeDataTests(unittest.TestCase):
     def setUp(self):
-        self.win = gtk.Window()
+        self.win = Gtk.Window()
         self.win.set_default_size(400, 400)
         self.tree = ObjectTree([Column('name'), Column('age')])
         self.win.add(self.tree)
@@ -305,7 +305,7 @@ class ConstructorTest(unittest.TestCase):
         self.assertEqual(len(columns), 1)
 
     def testGObjectNew(self):
-        olist = gobject.new(ObjectList)
+        olist = GObject.new(ObjectList)
         self.assertTrue(isinstance(olist, ObjectList))
 
 
@@ -368,24 +368,24 @@ class MethodTest(unittest.TestCase):
         self.assertRaises(NotImplementedError, self.klist.sort, 1, 2)
 
     def testSelectPath(self):
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_NONE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.NONE)
         self.assertRaises(TypeError, self.klist.select_paths, (0,))
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_SINGLE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.SINGLE)
         self.klist.select_paths((0,))
 
     def testSelect(self):
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_NONE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.NONE)
         self.assertRaises(TypeError, self.klist.select, None)
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_SINGLE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.SINGLE)
 
     def testGetSelected(self):
         item = self.klist[0]
         self.klist.select(item)
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_SINGLE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.SINGLE)
         self.assertEqual(self.klist.get_selected(), item)
 
     def testGetSelectedRows(self):
-        self.klist.get_treeview().get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self.klist.get_treeview().get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         item = self.klist[0]
         self.klist.select(item)
         self.assertEqual(self.klist.get_selected_rows(), [item])
@@ -439,7 +439,7 @@ class BooleanDataTests(unittest.TestCase):
 
         column = self.list.get_column_by_name('value')
         treeview_column = self.list.get_treeview_column(column)
-        renderer = treeview_column.get_cell_renderers()
+        renderer = treeview_column.get_cells()
         renderer[0].emit('toggled', 1)
 
         self.assertEqual(self.list[0].value, False)
@@ -456,7 +456,7 @@ class RadioColumnTests(unittest.TestCase):
         olist = ObjectList(
             [Column('foo', radio=True, data_type=bool, editable=True)])
         column = olist.get_treeview().get_column(0)
-        renderer = column.get_cell_renderers()[0]
+        renderer = column.get_cells()[0]
 
         items = [Settable(foo=False) for i in range(5)]
         olist.add_list(items)
